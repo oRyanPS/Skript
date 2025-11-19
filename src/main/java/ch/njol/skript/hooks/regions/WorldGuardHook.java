@@ -116,7 +116,7 @@ public class WorldGuardHook extends RegionsPlugin<WorldGuardPlugin> {
 				final Collection<UUID> ids = region.getMembers().getUniqueIds();
 				final Collection<OfflinePlayer> r = new ArrayList<OfflinePlayer>(ids.size());
 				for (final UUID id : ids)
-					r.add(Bukkit.getOfflinePlayer(id));
+					r.add(Bukkit.getOfflinePlayer(id.toString()));
 				return r;
 			} else {
 				final Collection<String> ps = region.getMembers().getPlayers();
@@ -143,7 +143,7 @@ public class WorldGuardHook extends RegionsPlugin<WorldGuardPlugin> {
 				final Collection<UUID> ids = region.getOwners().getUniqueIds();
 				final Collection<OfflinePlayer> r = new ArrayList<OfflinePlayer>(ids.size());
 				for (final UUID id : ids)
-					r.add(Bukkit.getOfflinePlayer(id));
+					r.add(Bukkit.getOfflinePlayer(id.toString()));
 				return r;
 			} else {
 				final Collection<String> ps = region.getOwners().getPlayers();

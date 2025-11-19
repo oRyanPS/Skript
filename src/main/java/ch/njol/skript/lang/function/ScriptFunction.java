@@ -21,6 +21,7 @@
 
 package ch.njol.skript.lang.function;
 
+import ch.njol.skript.Skript;
 import org.eclipse.jdt.annotation.Nullable;
 
 import ch.njol.skript.ScriptLoader;
@@ -88,6 +89,9 @@ public class ScriptFunction<T> extends Function<T> {
 			}
 		}
 		trigger.execute(e);
+
+        FunctionData data = Functions.functions.get(name);
+        if(data != null) data.calls.clear();
 		returnValueSet = false;
 		return returnValue;
 	}

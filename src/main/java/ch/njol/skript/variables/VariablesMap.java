@@ -195,5 +195,8 @@ final class VariablesMap {
 			}
 		}
 	}
-	
+
+    public String[] getVariableNames() {
+        return hashMap.keySet().toArray(new String[0]);
+    }
 }

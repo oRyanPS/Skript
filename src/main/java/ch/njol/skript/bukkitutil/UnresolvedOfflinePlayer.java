@@ -117,10 +117,9 @@ public class UnresolvedOfflinePlayer implements OfflinePlayer {
 	public void setOp(final boolean value) {
 		bukkitOfflinePlayer.setOp(value);
 	}
-	
-	@Override
+
 	public UUID getUniqueId() {
-		return bukkitOfflinePlayer.getUniqueId();
+		return bukkitOfflinePlayer.getPlayer().getUniqueId();
 	}
 	
 	@Override

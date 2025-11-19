@@ -202,8 +202,13 @@ public class BlockStateBlock implements Block {
 			state.setType(type);
 		}
 	}
-	
-	@Override
+
+    @Override
+    public void setType(Material material, boolean b) {
+        setType(material);
+    }
+
+    @Override
 	public boolean setTypeId(final int type) {
 		if (delayChanges) {
 			Bukkit.getScheduler().scheduleSyncDelayedTask(Skript.getInstance(), new Runnable() {

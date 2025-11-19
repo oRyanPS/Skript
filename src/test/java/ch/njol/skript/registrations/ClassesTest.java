@@ -122,17 +122,20 @@ public class ClassesTest {
 		final Field r = Skript.class.getDeclaredField("acceptRegistrations");
 		r.setAccessible(true);
 		r.set(null, false);
-		Classes.onRegistrationsStop();
 	}
 	
 	@Test
-	public void test() {
+	public void test() throws Exception{
+        final Field r = Skript.class.getDeclaredField("acceptRegistrations");
+        r.setAccessible(true);
+        r.set(null, true);
 		final Object[] random = {
 				// Java
 				(byte) 127, (short) 2000, -1600000, 1L << 40, -1.5f, 13.37,
 				"String",
 				
 				// Skript
+
 				Color.BLACK, StructureType.RED_MUSHROOM, WeatherType.THUNDER,
 				new Date(System.currentTimeMillis()), new Timespan(1337), new Time(12000), new Timeperiod(1000, 23000),
 				new Experience(15), new Direction(0, Math.PI, 10), new Direction(new double[] {0, 1, 0}),
@@ -143,10 +146,13 @@ public class ClassesTest {
 				
 				// there is also at least one variable for each class on my test server which are tested whenever the server shuts down.
 		};
+        r.set(null, false);
+        Classes.onRegistrationsStop();
 		
 		for (final Object o : random) {
 			Classes.serialize(o); // includes a deserialisation test
 		}
+
 	}
 	
 }
