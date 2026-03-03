@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import ch.njol.skript.variables.Variables;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -150,6 +151,7 @@ public abstract class SkriptEventHandler {
 			t.execute(e);
 			logTriggerEnd(t);
 		}
+        Variables.removeLocals(e);
 		
 		logEventEnd();
 	}

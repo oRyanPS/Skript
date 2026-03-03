@@ -309,11 +309,17 @@ public class SkriptParser {
 			}
 			log.clear();
 			if ((flags & PARSE_EXPRESSIONS) != 0) {
-				final Expression<?> e;
+
+                final Expression<?> e;
 				if (expr.startsWith("\"") && expr.endsWith("\"") && expr.length() != 1 && (types[0] == Object.class || CollectionUtils.contains(types, String.class))) {
 					e = VariableString.newInstance("" + expr.substring(1, expr.length() - 1));
 				} else {
-					e = parse(expr, (Iterator) Skript.getExpressions(types), null);
+                    SyntaxElement element = parse(expr, (Iterator) Skript.getExpressions(types), null);
+                    if(element instanceof Expression<?>) {
+                        e = (Expression<?>) element;
+                    } else {
+                        e = null;
+                    }
 				}
 				if (e != null) {
 					for (final Class<? extends T> t : types) {

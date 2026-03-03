@@ -82,7 +82,7 @@ public abstract class Variables {
 			@SuppressWarnings("unchecked")
 			private final void init() {
 				// used by asserts
-				info = (ClassInfo<? extends ConfigurationSerializable>) Classes.getExactClassInfo(Object.class);
+                info = (ClassInfo<? extends ConfigurationSerializable>) (ClassInfo<?>) Classes.getExactClassInfo(Object.class);
 			}
 			
 			@SuppressWarnings("unchecked")
@@ -481,5 +481,39 @@ public abstract class Variables {
 			variablesLock.readLock().unlock();
 		}
 	}
-	
+
+    public static VariablesMap removeLocals(Event e) {
+       return localVariables.remove(e);
+    }
+
+    public static void setLocalVariables(Event e, @Nullable Object localVars) {
+        if(localVars != null) {
+            localVariables.put(e,(VariablesMap) localVars);
+        } else {
+            removeLocals(e);
+        }
+    }
+
+    public static Map<String, Object> removeLocalsSnapshots(final Event e){
+        final VariablesMap map = localVariables.remove(e);
+        if(map == null) return null;
+
+        final Map<String, Object> copy = new HashMap<String, Object>();
+
+        for(final String key : map.getVariableNames()){
+            copy.put(key, map.getVariable(key));
+        }
+        return copy;
+    }
+
+    public static void setLocalVariablesFromSnapshot(final Event e, final Map<String, Object> snapshot) {
+        if (snapshot == null) {
+            removeLocals(e);
+            return;
+        }
+        final VariablesMap map = new VariablesMap(); // podemos usar o construtor interno
+        for (final Map.Entry<String, Object> en : snapshot.entrySet())
+            map.setVariable(en.getKey(), en.getValue());
+        localVariables.put(e, map);
+    }
 }

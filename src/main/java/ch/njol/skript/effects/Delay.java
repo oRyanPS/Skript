@@ -21,10 +21,12 @@
 
 package ch.njol.skript.effects;
 
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import ch.njol.skript.variables.Variables;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
@@ -56,7 +58,7 @@ public class Delay extends Effect {
 	}
 	
 	@SuppressWarnings("null")
-	private Expression<Timespan> duration;
+	protected Expression<Timespan> duration;
 	
 	@SuppressWarnings({"unchecked", "null"})
 	@Override
@@ -76,11 +78,21 @@ public class Delay extends Effect {
 			final Timespan d = duration.getSingle(e);
 			if (d == null)
 				return null;
+            final Object localVars = Variables.removeLocals(e);
+            final WeakReference<Event> eventRef  = new WeakReference<>(e);
+
 			Bukkit.getScheduler().scheduleSyncDelayedTask(Skript.getInstance(), new Runnable() {
 				@Override
 				public void run() {
+                    Event event = eventRef.get();
+                    if(event == null) return;
+
 					if (Skript.debug())
 						Skript.info(getIndentation() + "... continuing after " + (System.nanoTime() - start) / 1000000000. + "s");
+
+                    if(localVars != null)
+                        Variables.setLocalVariables(event, localVars);
+
 					TriggerItem.walk(next, e);
 				}
 			}, d.getTicks());

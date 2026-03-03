@@ -203,8 +203,13 @@ public class DelayedChangeBlock implements Block {
 			});
 		}
 	}
-	
-	@Override
+
+    @Override
+    public void setType(Material material, boolean b) {
+        setType(material);
+    }
+
+    @Override
 	public boolean setTypeId(final int type) {
 		final BlockState newState = this.newState;
 		if (newState != null) {
