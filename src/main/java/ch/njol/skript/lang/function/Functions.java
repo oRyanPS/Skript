@@ -66,6 +66,8 @@ public abstract class Functions {
 
     final static Map<String, JavaFunction<?>> javaFunctions = new HashMap<String, JavaFunction<?>>();
     final static Map<String, FunctionData> functions = new HashMap<String, FunctionData>();
+    private static final List<FunctionReference<?>> pendingReferences = new ArrayList<>();
+
 
     /**
      * @param function
@@ -79,6 +81,10 @@ public abstract class Functions {
             throw new SkriptAPIException("Duplicate function " + function.name);
         functions.put(function.name, new FunctionData(function));
         javaFunctions.put(function.name, function);
+        resolvePendingReferences();
+
+        Skript.info("Registered function: "+function.getName());
+
         return function;
     }
 
@@ -104,6 +110,11 @@ public abstract class Functions {
         if (!m.matches())
             return error("Invalid function definition. Please check for typos and that the function's name only contains letters and underscores. Refer to the documentation for more information.");
         final String name = "" + m.group(1);
+
+        // Remove a função caso ela já esteja registrada.
+        removeFunction(name);
+        //Skript.info("Loading function definition: "+ name);
+
         final String args = m.group(2);
         final String returnType = m.group(3);
         final List<Parameter<?>> params = new ArrayList<Parameter<?>>();
@@ -161,6 +172,31 @@ public abstract class Functions {
         final Function<?> f = new ScriptFunction<Object>(name, params.toArray(new Parameter[params.size()]), node, (ClassInfo<Object>) c, p == null ? false : !p.getSecond());
 //		functions.put(name, new FunctionData(f)); // in constructor
         return f;
+    }
+
+    public static void registerPendingReference(FunctionReference<?> ref) {
+        pendingReferences.add(ref);
+    }
+
+    public static void resolvePendingReferences() {
+        Iterator<FunctionReference<?>> it = pendingReferences.iterator();
+
+        while (it.hasNext()) {
+            FunctionReference<?> ref = it.next();
+
+            Function<?> func = getFunction(ref.functionName);
+
+            if(func != null) {
+                ref.setFunction(func);
+                it.remove();
+            }
+        }
+
+        // Se sobrar alguma referencia, disparar erro real.
+        for(FunctionReference<?> ref : pendingReferences) {
+            Skript.error("Function '"+ ref.functionName+ "' does not exist.");
+        }
+        pendingReferences.clear();
     }
 
     @Nullable
@@ -233,4 +269,13 @@ public abstract class Functions {
         return javaFunctions.values();
     }
 
+    public static void removeFunction(String name) {
+        FunctionData data = functions.remove(name);
+        if(data != null) {
+            data.calls.clear();
+        }
+        javaFunctions.remove(name);
+
+        if(Skript.debug()) Skript.info("Function '"+name+"' unregistered and cleaned.");
+    }
 }

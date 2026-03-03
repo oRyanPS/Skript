@@ -32,10 +32,7 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.SkriptParser;
-import ch.njol.skript.log.RetainingLogHandler;
 import ch.njol.skript.log.SkriptLogger;
-import ch.njol.util.StringUtils;
 import ch.njol.util.coll.CollectionUtils;
 
 /**
@@ -70,100 +67,72 @@ public class FunctionReference<T> {
 
     @SuppressWarnings("unchecked")
     public boolean validateFunction(final boolean first) {
-        final Function<?> newFunc = Functions.getFunction(functionName);
-        SkriptLogger.setNode(node);
+        Function<?> newFunc = Functions.getFunction(functionName);
+
+        // FORWARD REFERENCE
         if (newFunc == null) {
-            if (first)
-                Skript.error("The function '" + functionName + "' does not exist.");
-            else
-                Skript.error("The function '" + functionName + "' was deleted or renamed, but is still used in other script(s)."
-                        + " These will continue to use the old version of the function until Skript restarts.");
-            return false;
+            return true;
         }
-        if (newFunc == function)
+
+        SkriptLogger.setNode(node);
+
+        if(newFunc == function)
             return true;
 
         final Class<? extends T>[] returnTypes = this.returnTypes;
-        if (returnTypes != null) {
+
+        if(returnTypes != null) {
+
             final ClassInfo<?> rt = newFunc.returnType;
-            if (rt == null) {
-                if (first)
-                    Skript.error("The function '" + functionName + "' doesn't return any value.");
-                else
-                    Skript.error("The function '" + functionName + "' was redefined with no return value, but is still used in other script(s)."
-                            + " These will continue to use the old version of the function until Skript restarts.");
+            if(rt == null) {
+                Skript.error("The function '" + functionName + "' doesn't return any value.");
                 return false;
             }
-            if (!CollectionUtils.containsAnySuperclass(returnTypes, rt.getC())) {
-                if (first)
-                    Skript.error("The returned value of the function '" + functionName + "', " + newFunc.returnType + ", is " + SkriptParser.notOfType(returnTypes) + ".");
-                else
-                    Skript.error("The function '" + functionName + "' was redefined with a different, incompatible return type, but is still used in other script(s)."
-                            + " These will continue to use the old version of the function until Skript restarts.");
+
+            if(!CollectionUtils.containsAnySuperclass(returnTypes, rt.getC())) {
+                Skript.error("The returned value of the function '" + functionName + "' is incompatible.");
                 return false;
             }
-            if (first) {
-                single = newFunc.single;
-            } else if (single && !newFunc.single) {
-                Skript.error("The function '" + functionName + "' was redefined with a different, incompatible return type, but is still used in other script(s)."
-                        + " These will continue to use the old version of the function until Skript restarts.");
+
+            single = newFunc.single;
+        }
+
+        singleUberParam = newFunc.getMaxParameters() == 1 && !newFunc.parameters[0].single;
+
+        if(!singleUberParam) {
+            if(parameters.length > newFunc.getMaxParameters()) {
+                Skript.error("Too many arguments for new function '"+ functionName+ "'");
                 return false;
             }
         }
 
-        // check number of parameters only if the function does not have a single parameter that accepts multiple values
-        singleUberParam = newFunc.getMaxParameters() == 1 && !newFunc.parameters[0].single;
-        if (!singleUberParam) {
-            if (parameters.length > newFunc.getMaxParameters()) {
-                if (first) {
-                    if (newFunc.getMaxParameters() == 0)
-                        Skript.error("The function '" + functionName + "' has no arguments, but " + parameters.length + " are given."
-                                + " To call a function without parameters, just write the function name followed by '()', e.g. 'func()'.");
-                    else
-                        Skript.error("The function '" + functionName + "' has only " + newFunc.getMaxParameters() + " argument" + (newFunc.getMaxParameters() == 1 ? "" : "s") + ","
-                                + " but " + parameters.length + " are given."
-                                + " If you want to use lists in function calls, you have to use additional parentheses, e.g. 'give(player, (iron ore and gold ore))'");
-                } else {
-                    Skript.error("The function '" + functionName + "' was redefined with a different, incompatible amount of arguments, but is still used in other script(s)."
-                            + " These will continue to use the old version of the function until Skript restarts.");
-                }
-                return false;
-            }
-        }
-        if (parameters.length < newFunc.getMinParameters()) {
-            if (first)
-                Skript.error("The function '" + functionName + "' requires at least " + newFunc.getMinParameters() + " argument" + (newFunc.getMinParameters() == 1 ? "" : "s") + ","
-                        + " but only " + parameters.length + " " + (parameters.length == 1 ? "is" : "are") + " given.");
-            else
-                Skript.error("The function '" + functionName + "' was redefined with a different, incompatible amount of arguments, but is still used in other script(s)."
-                        + " These will continue to use the old version of the function until Skript restarts.");
+        if(parameters.length < newFunc.getMinParameters()) {
+            Skript.error("Not enough arguments for function '"+functionName+"'");
             return false;
         }
+
         for (int i = 0; i < parameters.length; i++) {
             final Parameter<?> p = newFunc.parameters[singleUberParam ? 0 : i];
-            final RetainingLogHandler log = SkriptLogger.startRetainingLog();
-            try {
-                final Expression<?> e = parameters[i].getConvertedExpression(p.type.getC());
-                if (e == null) {
-                    if (first)
-                        Skript.error("The " + StringUtils.fancyOrderNumber(i + 1) + " argument given to the function '" + functionName + "' is not of the required type " + p.type + "."
-                                + " Check the correct order of the arguments and put lists into parentheses if appropriate (e.g. 'give(player, (iron ore and gold ore))')."
-                                + " Please note that storing the value in a variable and then using that variable as parameter will suppress this error, but it still won't work.");
-                    else
-                        Skript.error("The function '" + functionName + "' was redefined with different, incompatible arguments, but is still used in other script(s)."
-                                + " These will continue to use the old version of the function until Skript restarts.");
-                    return false;
-                }
-                parameters[i] = e;
-            } finally {
-                log.printLog();
+            final Expression<?> e = parameters[i].getConvertedExpression(p.type.getC());
+
+            if(e == null) {
+                Skript.error("Invalid parameter type in function '"+functionName+"'");
+                return false;
             }
+
+            parameters[i] = e;
         }
 
         function = (Function<? extends T>) newFunc;
+
         Functions.registerCaller(this);
 
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setFunction(Function<?> function) {
+        this.function = (Function<? extends T>) function;
     }
 
     @Nullable
